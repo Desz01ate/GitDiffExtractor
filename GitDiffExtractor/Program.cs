@@ -11,7 +11,7 @@ namespace GitDiffExtractor
         {
             if (args.Length == 0)
             {
-                args = new string[] { "." ,"main" };
+                args = new string[] { ".", "main" };
             }
 
             Directory.SetCurrentDirectory(args[0]);
@@ -40,6 +40,14 @@ namespace GitDiffExtractor
 
                 var split = diff.Split("\t");
 
+                var mode = split[0];
+
+                // skip deleted files
+                if (mode == "D")
+                {
+                    continue;
+                }
+
                 var file = split[1];
 
                 var fileInfo = new FileInfo(file);
@@ -58,15 +66,19 @@ namespace GitDiffExtractor
 
         static string Exec(string command)
         {
-            var psi = new ProcessStartInfo();
-            psi.FileName = "cmd.exe";
-            psi.Arguments = string.Format("/c \"{0}\"", command);
-            psi.UseShellExecute = false;
-            psi.RedirectStandardInput = true;
-            psi.RedirectStandardOutput = true;
-            psi.CreateNoWindow = true;
-            var res = Process.Start(psi);
-            return res.StandardOutput.ReadToEnd();
+            var psi = new ProcessStartInfo()
+            {
+                FileName = "cmd.exe",
+                Arguments = string.Format("/c \"{0}\"", command),
+                UseShellExecute = false,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true,
+            };
+
+            var proc = Process.Start(psi);
+
+            return proc.StandardOutput.ReadToEnd();
         }
     }
 }
