@@ -2,83 +2,102 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
-namespace GitDiffExtractor
+namespace GitDiffExtractor;
+
+internal class Program
 {
-    internal class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        if (args.Length == 0)
         {
-            if (args.Length == 0)
+            args = new string[] { ".", "main" };
+        }
+
+        Directory.SetCurrentDirectory(args[0]);
+
+        if (!Directory.Exists(".git"))
+        {
+            Console.WriteLine("Current working directory contains no .git folder");
+            return;
+        }
+
+        var branches = Exec("git branch").Split("\n").Select(x => x.Trim());
+
+        var current = branches.Single(x => x.StartsWith("*")).Replace("* ", "");
+        var compare = branches.SingleOrDefault(x => x == args[1]);
+
+        var diffs = Exec($"git diff --name-status {compare}..{current}").Split("\n");
+
+        var outDir = Directory.CreateDirectory(Path.Combine("patch", current));
+
+        foreach (var diff in diffs)
+        {
+            if (string.IsNullOrWhiteSpace(diff))
             {
-                args = new string[] { ".", "main" };
+                continue;
             }
 
-            Directory.SetCurrentDirectory(args[0]);
+            var split = diff.Split("\t");
 
-            if (!Directory.Exists(".git"))
+            var mode = split[0];
+
+            // skip deleted files
+            if (mode == "D")
             {
-                Console.WriteLine("Current working directory contains no .git folder");
-                return;
+                continue;
             }
 
-            var branches = Exec("git branch").Split("\n").Select(x => x.Trim());
+            var file = split[1];
 
-            var current = branches.Single(x => x.StartsWith("*")).Replace("* ", "");
-            var compare = branches.Single(x => x == args[1]);
+            var fileInfo = new FileInfo(file);
 
-            var diffs = Exec($"git diff --name-status {compare}..{current}").Split("\n");
+            var dir = Path.GetDirectoryName(Path.GetRelativePath(".", fileInfo.FullName));
 
-            var outDir = Directory.CreateDirectory(Path.Combine("patch", current));
+            var newDir = Path.Combine(outDir.FullName, dir);
 
-            foreach (var diff in diffs)
-            {
-                if (string.IsNullOrWhiteSpace(diff))
-                {
-                    continue;
-                }
+            Directory.CreateDirectory(newDir);
 
-                var split = diff.Split("\t");
+            fileInfo.CopyTo(Path.Combine(newDir, fileInfo.Name), true);
+        }
 
-                var mode = split[0];
+        Console.WriteLine($"Copy of `{current}` branch has been created at {outDir.FullName}.");
 
-                // skip deleted files
-                if (mode == "D")
-                {
-                    continue;
-                }
-
-                var file = split[1];
-
-                var fileInfo = new FileInfo(file);
-
-                var dir = Path.GetDirectoryName(Path.GetRelativePath(".", fileInfo.FullName));
-
-                var newDir = Path.Combine(outDir.FullName, dir);
-
-                Directory.CreateDirectory(newDir);
-
-                fileInfo.CopyTo(Path.Combine(newDir, fileInfo.Name), true);
-            }
-
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
             Process.Start(Environment.GetEnvironmentVariable("WINDIR") + @"\explorer.exe", outDir.FullName);
         }
+    }
 
-        static string Exec(string command)
+    static string Exec(string command)
+    {
+        var psi = new ProcessStartInfo()
         {
-            var psi = new ProcessStartInfo()
-            {
-                FileName = "cmd.exe",
-                Arguments = string.Format("/c \"{0}\"", command),
-                UseShellExecute = false,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true,
-            };
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            CreateNoWindow = true,
+        };
 
-            var proc = Process.Start(psi);
 
-            return proc.StandardOutput.ReadToEnd();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            psi.FileName = "cmd.exe";
+            psi.Arguments = string.Format("/c \"{0}\"", command);
         }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            psi.FileName = "/bin/bash";
+            psi.Arguments = string.Format("-c \"{0}\"", command);
+        }
+        else
+        {
+            throw new NotImplementedException();
+        }
+
+        var proc = Process.Start(psi);
+
+        return proc.StandardOutput.ReadToEnd();
     }
 }
