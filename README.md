@@ -12,8 +12,13 @@ A tool to make a copy of diff files between git branches
 ### How to use
 The tool will compare current branch, for example `add-feature-abc` with `main` branch on default when the program is run without additional arguments at current directory
 
-you can give a specify arguments with
+Supported command line arguments:
 
-args
-- 0: for target working directory (default: .)
-- 1: for target comparer branch (default: main)
+  --auto       (Default: true) Automatically compares current branch with main branch, ignores current and target argument
+
+  --current    Current branch to compare
+
+  --target     (Default: main) Target branch to compare with
+
+  --dir        Required. Set working directory to start the extraction
+

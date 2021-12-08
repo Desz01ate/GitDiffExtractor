@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using CommandLine;
 
 namespace GitDiffExtractor;
 
@@ -10,12 +12,12 @@ internal class Program
 {
     static void Main(string[] args)
     {
-        if (args.Length == 0)
-        {
-            args = new string[] { ".", "main" };
-        }
+        Parser.Default.ParseArguments<Options>(args).WithParsed(Extraction);
+    }
 
-        Directory.SetCurrentDirectory(args[0]);
+    static void Extraction(Options options)
+    {
+        Directory.SetCurrentDirectory(options.WorkingDirectory);
 
         if (!Directory.Exists(".git"))
         {
@@ -23,14 +25,30 @@ internal class Program
             return;
         }
 
-        var branches = Exec("git branch").Split("\n").Select(x => x.Trim());
+        string current, target;
 
-        var current = branches.Single(x => x.StartsWith("*")).Replace("* ", "");
-        var compare = branches.SingleOrDefault(x => x == args[1]);
+        if (options.Auto)
+        {
+            var branches = Exec("git branch").Split("\n").Select(x => x.Trim());
 
-        var diffs = Exec($"git diff --name-status {compare}..{current}").Split("\n");
+            current = branches.Single(x => x.StartsWith("*")).Replace("* ", "");
+            target = branches.SingleOrDefault(x => x == options.Target);
+        }
+        else
+        {
+            current = options.Current;
+            target = options.Target;
+        }
+
+        Console.WriteLine($"Current working directory: {Directory.GetCurrentDirectory()}");
+        Console.WriteLine($"Current target branch: {target}");
+        Console.WriteLine($"Current branch: {current}");
+
+        var diffs = Exec($"git diff --name-status {target}..{current}").Split("\n");
 
         var outDir = Directory.CreateDirectory(Path.Combine("patch", current));
+
+        var errors = new List<string>();
 
         foreach (var diff in diffs)
         {
@@ -59,7 +77,24 @@ internal class Program
 
             Directory.CreateDirectory(newDir);
 
-            fileInfo.CopyTo(Path.Combine(newDir, fileInfo.Name), true);
+            try
+            {
+                fileInfo.CopyTo(Path.Combine(newDir, fileInfo.Name), true);
+            }
+            catch
+            {
+                errors.Add(fileInfo.Name);
+            }
+        }
+
+        if (errors.Count > 0)
+        {
+            Console.WriteLine($"\nUnable to make a copy of following files");
+            foreach (var error in errors)
+            {
+                Console.WriteLine($"\t- {error}");
+            }
+            Console.WriteLine();
         }
 
         Console.WriteLine($"Copy of `{current}` branch has been created at {outDir.FullName}.");
