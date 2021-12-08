@@ -1,4 +1,4 @@
-# GitDiffExtractor
+# diff-extractor
 A tool to make a copy of diff files between git branches
 
 ### Prerequisite
