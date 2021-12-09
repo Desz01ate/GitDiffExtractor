@@ -1,3 +1,5 @@
+namespace GitDiffExtractor;
+
 internal class Options
 {
     [Option("current", Required = false, HelpText = "Current branch to compare", Default = null)]
