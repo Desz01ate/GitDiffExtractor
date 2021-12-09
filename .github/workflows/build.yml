@@ -25,6 +25,29 @@ jobs:
       run: dotnet publish -c Release -r ubuntu.20.04-x64
     - name: Publish windows 10 x64
       run: dotnet publish -c Release -r win10-x64
+    - name: Zip Published Linux Files
+      run: |
+        zip --junk-paths diff_extractor_linux /home/runner/work/diff-extractor/diff-extractor/GitDiffExtractor/bin/Release/net6.0/ubuntu.20.04-x64/publish/*
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./diff_extractor_linux.zip
+        asset_name: diff_extractor_linux.zip
+        asset_content_type: application/zip
     - name: Upload ubuntu build artifact
       uses: actions/upload-artifact@v2
       with:
