@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using CommandLine;
-
-namespace GitDiffExtractor;
+﻿namespace GitDiffExtractor;
 
 internal class Program
 {
@@ -25,21 +17,24 @@ internal class Program
             return;
         }
 
-        string current, target;
+        var current = options.Current;
+        var target = string.Empty;
 
-        if (options.Auto)
+        var branches = Exec("git branch").Split("\n").Select(x => x.Trim());
+
+        if (string.IsNullOrWhiteSpace(current))
         {
-            var branches = Exec("git branch").Split("\n").Select(x => x.Trim());
-
             current = branches.Single(x => x.StartsWith("*")).Replace("* ", "");
-            target = branches.SingleOrDefault(x => x == options.Target);
-        }
-        else
-        {
-            current = options.Current;
-            target = options.Target;
         }
 
+        target = branches.SingleOrDefault(x => x == options.Target);
+
+        if (string.IsNullOrWhiteSpace(current) || string.IsNullOrWhiteSpace(target))
+        {
+            Console.WriteLine($"Unable to find '{current}' or '{target}' branch, please check your git branch and try again.");
+            return;
+        }
+        
         Console.WriteLine($"Current working directory: {Directory.GetCurrentDirectory()}");
         Console.WriteLine($"Current target branch: {target}");
         Console.WriteLine($"Current branch: {current}");
@@ -73,7 +68,7 @@ internal class Program
 
             var dir = Path.GetDirectoryName(Path.GetRelativePath(".", fileInfo.FullName));
 
-            var newDir = Path.Combine(outDir.FullName, dir);
+            var newDir = Path.Combine(outDir.FullName, dir!);
 
             Directory.CreateDirectory(newDir);
 
@@ -131,7 +126,12 @@ internal class Program
             throw new NotImplementedException();
         }
 
-        var proc = Process.Start(psi);
+        using var proc = Process.Start(psi);
+
+        if (proc == null)
+        {
+            throw new InvalidOperationException($"Unable to start {psi.FileName}.");
+        }
 
         return proc.StandardOutput.ReadToEnd();
     }
