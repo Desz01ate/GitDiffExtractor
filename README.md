@@ -8,6 +8,7 @@ A tool to make a copy of diff files between git branches
 ### Supported OS
 - Windows
 - Linux
+- MacOS
 
 ### How to use
 Download the tool from [Release](https://github.com/Desz01ate/diff-extractor/releases) section
