@@ -116,7 +116,7 @@ internal class Program
             psi.FileName = "cmd.exe";
             psi.Arguments = string.Format("/c \"{0}\"", command);
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             psi.FileName = "/bin/bash";
             psi.Arguments = string.Format("-c \"{0}\"", command);
