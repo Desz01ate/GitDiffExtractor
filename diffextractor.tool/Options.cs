@@ -1,4 +1,6 @@
-namespace GitDiffExtractor;
+﻿using CommandLine;
+
+namespace DiffExtractor.Tool;
 
 internal class Options
 {
@@ -10,4 +12,10 @@ internal class Options
 
     [Option("dir", Required = true, HelpText = "Working directory to start the extraction")]
     public string WorkingDirectory { get; set; } = null!;
+
+    [Option("outdir", Required = false, HelpText = "Working directory to start the extraction")]
+    public string? OutputDirectory { get; set; }
+
+    [Option("ignregex", Required = false, HelpText = "Ignore files that match given regular expression.")]
+    public string? IgnoreRegex { get; set; }
 }
