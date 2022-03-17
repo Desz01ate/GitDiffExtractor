@@ -1,6 +1,4 @@
-﻿using System.Text.RegularExpressions;
-
-namespace DiffExtractor;
+﻿namespace DiffExtractor;
 
 public sealed class Extractor : IExtractor
 {
