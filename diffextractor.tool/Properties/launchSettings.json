@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "diffextractor.tool": {
+      "commandName": "Project",
+      "commandLineArgs": "--dir D:\\server\\ge\\AGE_EU\\AGE_SERVER_FILES\\ --outdir patch"
+    }
+  }
+}

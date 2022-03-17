@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31717.71
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitDiffExtractor", "GitDiffExtractor\GitDiffExtractor.csproj", "{C38234D3-BD03-4EF5-93FD-179D75E0F041}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiffExtractor", "GitDiffExtractor\DiffExtractor.csproj", "{C38234D3-BD03-4EF5-93FD-179D75E0F041}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiffExtractor.Tool", "diffextractor.tool\DiffExtractor.Tool.csproj", "{0D78C3F5-D16B-4C6D-B6C5-CBEEF72C0447}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{C38234D3-BD03-4EF5-93FD-179D75E0F041}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C38234D3-BD03-4EF5-93FD-179D75E0F041}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C38234D3-BD03-4EF5-93FD-179D75E0F041}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D78C3F5-D16B-4C6D-B6C5-CBEEF72C0447}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D78C3F5-D16B-4C6D-B6C5-CBEEF72C0447}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D78C3F5-D16B-4C6D-B6C5-CBEEF72C0447}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D78C3F5-D16B-4C6D-B6C5-CBEEF72C0447}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

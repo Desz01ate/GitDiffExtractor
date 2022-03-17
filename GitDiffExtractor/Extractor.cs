@@ -1,49 +1,53 @@
-﻿namespace GitDiffExtractor;
+﻿namespace DiffExtractor;
 
-internal class Program
+public sealed class Extractor : IExtractor
 {
-    static void Main(string[] args)
+    private readonly ILogger<IExtractor>? logger;
+
+    public Extractor(ILogger<IExtractor>? logger)
     {
-        Parser.Default.ParseArguments<Options>(args).WithParsed(Extraction);
+        this.logger = logger;
     }
 
-    static void Extraction(Options options)
+    public void Extract(ExtractOptions options)
     {
-        Directory.SetCurrentDirectory(options.WorkingDirectory);
+        Directory.SetCurrentDirectory(options.WorkingDirectory.FullName);
 
         if (!Directory.Exists(".git"))
         {
-            Console.WriteLine("Current working directory contains no .git folder");
+            logger?.LogError("Unable to extract as .git directory not found.");
+
             return;
         }
 
-        var current = options.Current;
+        var current = options.CurrentBranch;
         var target = string.Empty;
 
-        var branches = Exec("git branch").Split("\n").Select(x => x.Trim());
+        var branches = Exec("git branch").Split('\n').Select(l => l.Trim());
 
         if (string.IsNullOrWhiteSpace(current))
         {
-            current = branches.Single(x => x.StartsWith("*")).Replace("* ", "");
+            current = branches.Single(b => b.StartsWith("*")).Replace("* ", string.Empty);
         }
 
-        target = branches.SingleOrDefault(x => x == options.Target);
+        target = branches.SingleOrDefault(b => b == options.TargetBranch);
 
         if (string.IsNullOrWhiteSpace(current) || string.IsNullOrWhiteSpace(target))
         {
-            Console.WriteLine($"Unable to find '{current}' or '{target}' branch, please check your git branch and try again.");
+            logger?.LogError($"Unable to find '{current}' or '{target}' branch, please check your git branch and try again.");
+
             return;
         }
-        
-        Console.WriteLine($"Current working directory: {Directory.GetCurrentDirectory()}");
-        Console.WriteLine($"Current target branch: {target}");
-        Console.WriteLine($"Current branch: {current}");
 
-        var diffs = Exec($"git diff --name-status {target}..{current}").Split("\n");
+        logger?.LogInformation($"Current working directory: {Directory.GetCurrentDirectory()}");
+        logger?.LogInformation($"Current target branch: {target}");
+        logger?.LogInformation($"Current branch: {current}");
 
-        var outDir = Directory.CreateDirectory(Path.Combine("patch", current));
+        var diffs = Exec($"git diff --name-status {target}..{current}").Split('\n');
 
-        var errors = new List<string>();
+        var outputDirectory = options.OutputDirectory ?? new DirectoryInfo(Path.Combine("diff-extract", current));
+
+        outputDirectory.Create();
 
         foreach (var diff in diffs)
         {
@@ -52,7 +56,7 @@ internal class Program
                 continue;
             }
 
-            var split = diff.Split("\t");
+            var split = diff.Split('\t');
 
             var mode = split[0];
 
@@ -68,7 +72,7 @@ internal class Program
 
             var dir = Path.GetDirectoryName(Path.GetRelativePath(".", fileInfo.FullName));
 
-            var newDir = Path.Combine(outDir.FullName, dir!);
+            var newDir = Path.Combine(outputDirectory.FullName, dir!);
 
             Directory.CreateDirectory(newDir);
 
@@ -78,29 +82,14 @@ internal class Program
             }
             catch
             {
-                errors.Add(fileInfo.Name);
+                logger?.LogError($"Unable to make a copy of '{fileInfo.Name}'");
             }
         }
 
-        if (errors.Count > 0)
-        {
-            Console.WriteLine($"\nUnable to make a copy of following files");
-            foreach (var error in errors)
-            {
-                Console.WriteLine($"\t- {error}");
-            }
-            Console.WriteLine();
-        }
-
-        Console.WriteLine($"Copy of `{current}` branch has been created at {outDir.FullName}.");
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            Process.Start(Environment.GetEnvironmentVariable("WINDIR") + @"\explorer.exe", outDir.FullName);
-        }
+        logger?.LogInformation($"Copy of `{current}` branch has been created at {outputDirectory.FullName}.");
     }
 
-    static string Exec(string command)
+    private static string Exec(string command)
     {
         var psi = new ProcessStartInfo()
         {
@@ -109,7 +98,6 @@ internal class Program
             RedirectStandardOutput = true,
             CreateNoWindow = true,
         };
-
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
