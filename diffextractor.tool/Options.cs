@@ -15,4 +15,7 @@ internal class Options
 
     [Option("outdir", Required = false, HelpText = "Working directory to start the extraction")]
     public string? OutputDirectory { get; set; }
+
+    [Option("ignregex", Required = false, HelpText = "Ignore files that match given regular expression.")]
+    public string? IgnoreRegex { get; set; }
 }

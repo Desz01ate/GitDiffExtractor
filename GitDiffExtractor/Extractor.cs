@@ -1,4 +1,6 @@
-﻿namespace DiffExtractor;
+﻿using System.Text.RegularExpressions;
+
+namespace DiffExtractor;
 
 public sealed class Extractor : IExtractor
 {
@@ -43,7 +45,21 @@ public sealed class Extractor : IExtractor
         logger?.LogInformation($"Current target branch: {target}");
         logger?.LogInformation($"Current branch: {current}");
 
-        var diffs = Exec($"git diff --name-status {target}..{current}").Split('\n');
+        var diffs = Exec($"git diff --name-status {target}..{current}")
+                    .Split('\n')
+                    .Where(l => !string.IsNullOrWhiteSpace(l))
+                    .Select(l => l.Split('\t'))
+                    .Select(p => new
+                    {
+                        Mode = p[0],
+                        File = p[1],
+                    })
+                    .Where(o => o.Mode != "D");
+
+        if (!string.IsNullOrWhiteSpace(options.IgnoreRegex))
+        {
+            diffs = diffs.Where(o => !Regex.IsMatch(o.File, options.IgnoreRegex, RegexOptions.Compiled));
+        }
 
         var outputDirectory = options.OutputDirectory ?? new DirectoryInfo(Path.Combine("diff-extract", current));
 
@@ -51,22 +67,7 @@ public sealed class Extractor : IExtractor
 
         foreach (var diff in diffs)
         {
-            if (string.IsNullOrWhiteSpace(diff))
-            {
-                continue;
-            }
-
-            var split = diff.Split('\t');
-
-            var mode = split[0];
-
-            // skip deleted files
-            if (mode == "D")
-            {
-                continue;
-            }
-
-            var file = split[1];
+            var file = diff.File;
 
             var fileInfo = new FileInfo(file);
 

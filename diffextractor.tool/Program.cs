@@ -16,6 +16,7 @@ public class Program
             extractor.Extract(new ExtractOptions(
                 options.Current,
                 options.Target,
+                options.IgnoreRegex,
                 new DirectoryInfo(options.WorkingDirectory),
                 string.IsNullOrWhiteSpace(options.OutputDirectory)
                 ? default
