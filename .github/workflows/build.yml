@@ -25,7 +25,7 @@ jobs:
       run: dotnet publish -c Release
     - name: Zip Published Release
       run: |
-        zip --junk-paths diff_extractor /home/runner/work/diff-extractor/diff-extractor/GitDiffExtractor/bin/Release/net6.0/*
+        zip --junk-paths diff_extractor /home/runner/work/diff-extractor/diff-extractor/diffextractor.tool/bin/Release/net6.0/publish/*
     - name: Get current date
       id: date
       run: echo "::set-output name=date::$(date +'%Y-%m-%dT%H%M%S')"
