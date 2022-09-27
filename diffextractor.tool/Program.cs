@@ -17,6 +17,8 @@ public class Program
                 options.Current,
                 options.Target,
                 options.IgnoreRegex,
+                options.ParallelCopy,
+                options.TestMode,
                 new DirectoryInfo(options.WorkingDirectory),
                 string.IsNullOrWhiteSpace(options.OutputDirectory)
                 ? default

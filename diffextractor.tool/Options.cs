@@ -18,4 +18,10 @@ internal class Options
 
     [Option("ignregex", Required = false, HelpText = "Ignore files that match given regular expression.")]
     public string? IgnoreRegex { get; set; }
+
+    [Option("parallelcpy", Required = false, HelpText = "Set if copy should be executed in parallel", Default = false)]
+    public bool ParallelCopy { get; set; }
+    
+    [Option("test", Required = false, HelpText = "Set if the session should be executed as test mode with no actual file copy", Default = false)]
+    public bool TestMode { get; set; }
 }
