@@ -23,8 +23,10 @@ above command will result in extract copy of current branch in `~/some/working/d
 
 ### Supported command line arguments
 
-| Name    | Required | Default Value | Description                               |
-|---------|----------|---------------|-------------------------------------------|
-| dir     | yes      | -             | Working directory to start the extraction |
-| current | no       | -             | Current branch to compare                 |
-| target  | no       | main          | Target branch to compare with             |
+| Name        | Required | Default Value | Description                                |
+|-------------|----------|---------------|--------------------------------------------|
+| dir         | yes      | -             | Working directory to start the extraction  |
+| current     | no       | -             | Current branch to compare                  |
+| target      | no       | main          | Target branch to compare with              |
+| parallelcpy | no       | false         | Set if copy should be executed in parallel |
+| test        | no       | false         | Set if the session should be executed as test mode with no actual file copy                                           |
