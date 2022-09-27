@@ -15,7 +15,7 @@ public sealed class Extractor : IExtractor
 
         if (!Directory.Exists(".git"))
         {
-            logger?.LogError("Unable to extract as .git directory not found.");
+            this.logger?.LogError("Unable to extract as .git directory not found.");
 
             return;
         }
@@ -34,60 +34,100 @@ public sealed class Extractor : IExtractor
 
         if (string.IsNullOrWhiteSpace(current) || string.IsNullOrWhiteSpace(target))
         {
-            logger?.LogError($"Unable to find '{current}' or '{target}' branch, please check your git branch and try again.");
+            this.logger?.LogError(
+                $"Unable to find '{current}' or '{target}' branch, please check your git branch and try again.");
 
             return;
         }
 
-        logger?.LogInformation($"Current working directory: {Directory.GetCurrentDirectory()}");
-        logger?.LogInformation($"Current target branch: {target}");
-        logger?.LogInformation($"Current branch: {current}");
+        this.logger?.LogInformation($"Current working directory: {Directory.GetCurrentDirectory()}");
+        this.logger?.LogInformation($"Current target branch: {target}");
+        this.logger?.LogInformation($"Current branch: {current}");
 
         var diffs = Exec($"git diff --name-status {target}..{current}")
-                    .Split('\n')
-                    .Where(l => !string.IsNullOrWhiteSpace(l))
-                    .Select(l => l.Split('\t'))
-                    .Select(p => new
-                    {
-                        Mode = p[0],
-                        File = p[1],
-                    })
-                    .Where(o => o.Mode != "D");
+            .Split('\n')
+            .Where(l => !string.IsNullOrWhiteSpace(l))
+            .Select(l => l.Split('\t'))
+            .Select(p => new
+            {
+                Mode = p[0],
+                File = p[1],
+            })
+            .Where(o => o.Mode != "D");
 
         if (!string.IsNullOrWhiteSpace(options.IgnoreRegex))
         {
             diffs = diffs.Where(o => !Regex.IsMatch(o.File, options.IgnoreRegex, RegexOptions.Compiled));
         }
 
-        var outputDirectory = options.OutputDirectory ?? new DirectoryInfo(Path.Combine("diff-extract", current));
-
-        outputDirectory.Create();
-
-        var source = options.ParallelCopy ? diffs.AsParallel() : diffs;
-        
-        foreach (var diff in source)
+        if (options.TestMode)
         {
-            var file = diff.File;
-
-            var fileInfo = new FileInfo(file);
-
-            var dir = Path.GetDirectoryName(Path.GetRelativePath(".", fileInfo.FullName));
-
-            var newDir = Path.Combine(outputDirectory.FullName, dir!);
-
-            Directory.CreateDirectory(newDir);
-
-            try
-            {
-                fileInfo.CopyTo(Path.Combine(newDir, fileInfo.Name), true);
-            }
-            catch
-            {
-                logger?.LogError($"Unable to make a copy of '{fileInfo.Name}'");
-            }
+            TestMode();
+        }
+        else
+        {
+            DoCopy();
         }
 
-        logger?.LogInformation($"Copy of `{current}` branch has been created at {outputDirectory.FullName}.");
+        void DoCopy()
+        {
+            var outputDirectory = options.OutputDirectory ?? new DirectoryInfo(Path.Combine("diff-extract", current));
+
+            outputDirectory.Create();
+
+            var source = options.ParallelCopy ? diffs.AsParallel() : diffs;
+
+            foreach (var diff in source)
+            {
+                var file = diff.File;
+
+                var fileInfo = new FileInfo(file);
+
+                var dir = Path.GetDirectoryName(Path.GetRelativePath(".", fileInfo.FullName));
+
+                var newDir = Path.Combine(outputDirectory.FullName, dir!);
+
+                Directory.CreateDirectory(newDir);
+
+                try
+                {
+                    fileInfo.CopyTo(Path.Combine(newDir, fileInfo.Name), true);
+                }
+                catch
+                {
+                    this.logger?.LogError($"Unable to make a copy of '{fileInfo.Name}'");
+                }
+            }
+
+            this.logger?.LogInformation($"Copy of `{current}` branch has been created at {outputDirectory.FullName}.");
+        }
+
+        void TestMode()
+        {
+            var outputDirectory = options.OutputDirectory ?? new DirectoryInfo(Path.Combine("diff-extract", current));
+
+            this.logger?.LogInformation("[Test Mode] {OutputDir} created", outputDirectory);
+
+            var source = options.ParallelCopy ? diffs.AsParallel() : diffs;
+
+            foreach (var diff in source)
+            {
+                var file = diff.File;
+
+                var fileInfo = new FileInfo(file);
+
+                var dir = Path.GetDirectoryName(Path.GetRelativePath(".", fileInfo.FullName));
+
+                var newDir = Path.Combine(outputDirectory.FullName, dir!);
+
+                var dest = Path.Combine(newDir, fileInfo.Name);
+
+                this.logger?.LogInformation("[Test Mode] {Dest} copied", dest);
+            }
+
+            this.logger?.LogInformation(
+                $"[Test Mode]  Copy of `{current}` branch has been created at {outputDirectory.FullName}.");
+        }
     }
 
     private static string Exec(string command)
@@ -105,7 +145,8 @@ public sealed class Extractor : IExtractor
             psi.FileName = "cmd.exe";
             psi.Arguments = string.Format("/c \"{0}\"", command);
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                 RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             psi.FileName = "/bin/bash";
             psi.Arguments = string.Format("-c \"{0}\"", command);
