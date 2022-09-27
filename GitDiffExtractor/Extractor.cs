@@ -23,7 +23,7 @@ public sealed class Extractor : IExtractor
         var current = options.CurrentBranch;
         var target = string.Empty;
 
-        var branches = Exec("git branch").Split('\n').Select(l => l.Trim());
+        var branches = Exec("git branch").Split('\n').Select(l => l.Trim()).ToArray();
 
         if (string.IsNullOrWhiteSpace(current))
         {
@@ -63,7 +63,9 @@ public sealed class Extractor : IExtractor
 
         outputDirectory.Create();
 
-        foreach (var diff in diffs)
+        var source = options.ParallelCopy ? diffs.AsParallel() : diffs;
+        
+        foreach (var diff in source)
         {
             var file = diff.File;
 

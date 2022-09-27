@@ -18,4 +18,7 @@ internal class Options
 
     [Option("ignregex", Required = false, HelpText = "Ignore files that match given regular expression.")]
     public string? IgnoreRegex { get; set; }
+
+    [Option("prlcpy", Required = false, HelpText = "Set if copy should be executed in parallel", Default = false)]
+    public bool ParallelCopy { get; set; }
 }
